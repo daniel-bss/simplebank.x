@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("cannot load config:", err)
 	}
 
-	connPool, err := pgxpool.New(context.Background(), config.DBSource)
+	connPool, err := pgxpool.New(context.Background(), config.GetDBSource())
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}

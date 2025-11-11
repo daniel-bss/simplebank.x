@@ -52,12 +52,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
 	defer stop()
 
-	connPool, err := pgxpool.New(ctx, config.DBSource)
+	connPool, err := pgxpool.New(ctx, config.GetDBSource())
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
 
-	runDBMigration(config.MigrationURL, config.DBSource)
+	// HEHE
+	// runDBMigration(config.MigrationURL, config.DBSource)
 
 	store := db.NewStore(connPool)
 
