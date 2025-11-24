@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 var interruptSignals = []os.Signal{
@@ -194,6 +195,7 @@ func runGatewayServer(
 	grpcMux := runtime.NewServeMux(
 		jsonOption,
 		runtime.WithErrorHandler(customErrorHandler),
+		runtime.WithForwardResponseOption(customResponseHandler),
 	)
 
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
@@ -298,3 +300,31 @@ func customErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler ru
 	w.WriteHeader(runtime.HTTPStatusFromCode(st.Code()))
 	_ = json.NewEncoder(w).Encode(body)
 }
+
+func customResponseHandler(ctx context.Context, w http.ResponseWriter, msg proto.Message) error {
+	m := msg.ProtoReflect()
+	data := m.Descriptor().Fields().ByName("data")
+
+	// types := m.Get(data).Message().Descriptor().Fields().ByName("user")
+
+	m.Clear(data)
+	return nil
+}
+
+// {
+//     "data": {
+//         "@type": "type.googleapis.com/pb.LoginUserResponse",
+//         "user": {
+//             "username": "admin",
+//             "full_name": "Admin ABC",
+//             "email": "admin@email.com",
+//             "password_changed_at": "0001-01-01T00:00:00Z",
+//             "created_at": "2025-11-22T18:34:41.721398Z"
+//         },
+//         "session_id": "6e360fc2-94b7-4d29-9043-a43b82a8e9e9",
+//         "access_token": "v2.local.lAed67R-9aJ3yOjAkaG7KgqsLNXoeh4zSPzs61SBubk0zrqsH5QzuZNVBffpmGkra87Fq9tYQ3SHF6JyTtf1AHePeSf04UCiY-Rbc6SLNzGGOBpBAdZMZC-gDFkxqYLD6_Sv6YAqJk_ei6NQ-fnXLrnIB6h59WQYyqZCVwbSrP2XPnv88GROlUwg7scPyOI5d_ahgn8QB6vgbaUf795CvMYaSiEysfvxSL91EEsVvf9-mX1TROGomLLXZf_2GcvkOqMIsZaqnK0PU-WjeKe98-jitvTxYevP7oNZD9R4vyQWyxPrT8PKuFqQaYvgqus.bnVsbA",
+//         "refresh_token": "v2.local.s1dtfwktRICCuLWTbXVoNmdm5wOyTZ3Bb_-NTkdHezfu_klvcHp-kPxgIJBy7NumKKsc2T73hfEZUe4cBFaChZLcnEhCdMMLUURxIIgM6Fchu9CNS6ONnR-9OuhMVk2uh3W0beSxhWqJI3AzdnokzqnUNSjMUT0ihc5-w8-RA3RvU-h_NsbMDXVXqPjI0oZ337FjLBAMkG9J8PUYG4hp8VVbEVW1-zZLUeil9f0hI4WzT6njxkrQIv6ecQm3kisr_ohNMzDvJf4si7siA5zKdRsPFFzvORPywGzRWTc_RTKr33SVwcSMn1ufpDDt_vI.bnVsbA",
+//         "access_token_expires_at": "2025-11-24T23:06:28.693738082Z",
+//         "refresh_token_expires_at": "2025-11-25T23:05:28.693961813Z"
+//     }
+// }
