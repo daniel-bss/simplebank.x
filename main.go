@@ -34,7 +34,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 var interruptSignals = []os.Signal{
@@ -195,7 +194,6 @@ func runGatewayServer(
 	grpcMux := runtime.NewServeMux(
 		jsonOption,
 		runtime.WithErrorHandler(customErrorHandler),
-		runtime.WithForwardResponseOption(customSuccessWrapper),
 	)
 
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
@@ -299,34 +297,4 @@ func customErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler ru
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(runtime.HTTPStatusFromCode(st.Code()))
 	_ = json.NewEncoder(w).Encode(body)
-}
-
-func customSuccessWrapper(ctx context.Context, w http.ResponseWriter, resp proto.Message) error {
-	// Only wrap normal responses, not errors
-	if e, ok := resp.(error); ok {
-		if _, ok := status.FromError(e); ok {
-			return nil
-		}
-	}
-
-	// Turn protobuf message into JSON
-	marshaler := &runtime.JSONPb{}
-	jsonBytes, err := marshaler.Marshal(resp)
-	if err != nil {
-		return err
-	}
-
-	wrapped := map[string]json.RawMessage{
-		"data": jsonBytes,
-	}
-
-	out, err := json.Marshal(wrapped)
-	if err != nil {
-		return err
-	}
-
-	// Replace response body
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(out)
-	return nil
 }
