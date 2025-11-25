@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -302,12 +303,12 @@ func customErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler ru
 }
 
 func customResponseHandler(ctx context.Context, w http.ResponseWriter, msg proto.Message) error {
-	m := msg.ProtoReflect()
-	data := m.Descriptor().Fields().ByName("data")
+	// m := msg.ProtoReflect()
+	// data := m.Descriptor().Fields().ByName("data")
 
 	// types := m.Get(data).Message().Descriptor().Fields().ByName("user")
 
-	m.Clear(data)
+	// m.Clear(data)
 	return nil
 }
 
